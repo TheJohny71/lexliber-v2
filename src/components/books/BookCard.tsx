@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Book, Check, Clock } from 'lucide-react';
+import { Book } from 'lucide-react';
 
 interface BookCardProps {
   book: {

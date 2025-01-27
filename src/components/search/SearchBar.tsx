@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Search, X, Book, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -10,23 +10,22 @@ interface SearchSuggestion {
 }
 
 interface SearchBarProps {
-  onSearch: (query: string) => void;
   onSuggestionSelect?: (suggestion: SearchSuggestion) => void;
   className?: string;
 }
 
-export const SearchBar = ({ onSearch, onSuggestionSelect, className = '' }: SearchBarProps) => {
+export const SearchBar = ({ onSuggestionSelect, className = '' }: SearchBarProps) => {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Mock suggestions - replace with real data
-  const mockSuggestions: SearchSuggestion[] = [
+  // Mock suggestions using useMemo to avoid recreation on every render
+  const mockSuggestions = useMemo<SearchSuggestion[]>(() => [
     { id: '1', title: 'Corporate Law Fundamentals', type: 'book', subtitle: 'LAW-123.45' },
     { id: '2', title: 'Intellectual Property', type: 'practice' },
     { id: '3', title: 'Contract Negotiations', type: 'recent' },
-  ];
+  ], []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -41,18 +40,24 @@ export const SearchBar = ({ onSearch, onSuggestionSelect, className = '' }: Sear
 
   useEffect(() => {
     if (query) {
-      // In a real app, this would be an API call
-      setSuggestions(mockSuggestions.filter(s => 
-        s.title.toLowerCase().includes(query.toLowerCase())
+      // Filter suggestions based on query
+      setSuggestions(mockSuggestions.filter(suggestion => 
+        suggestion.title.toLowerCase().includes(query.toLowerCase())
       ));
     } else {
       setSuggestions([]);
     }
-  }, [query]);
+  }, [query, mockSuggestions]); // Added mockSuggestions to dependency array
 
   const handleClear = () => {
     setQuery('');
     setSuggestions([]);
+  };
+
+  const handleSuggestionSelect = (suggestion: SearchSuggestion) => {
+    onSuggestionSelect?.(suggestion);
+    setIsFocused(false);
+    setQuery(suggestion.title);
   };
 
   return (
@@ -109,7 +114,7 @@ export const SearchBar = ({ onSearch, onSuggestionSelect, className = '' }: Sear
               <motion.button
                 key={suggestion.id}
                 whileHover={{ backgroundColor: 'rgba(0,0,0,0.05)' }}
-                onClick={() => onSuggestionSelect?.(suggestion)}
+                onClick={() => handleSuggestionSelect(suggestion)}
                 className="w-full px-4 py-2 flex items-center space-x-3 text-left"
               >
                 {suggestion.type === 'book' ? (
