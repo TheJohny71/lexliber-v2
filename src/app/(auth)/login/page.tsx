@@ -3,30 +3,25 @@
 
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
-  const handleAzureSignIn = async () => {
+  const handleSignIn = async () => {
     try {
       setLoading(true);
-      setError(null);
-      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'azure',
         options: {
-          scopes: 'email profile',
           redirectTo: `${window.location.origin}/auth/callback`
         }
       });
-
-      if (error) throw error;
       
+      if (error) throw error;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
       setLoading(false);
     }
   };
@@ -37,7 +32,7 @@ export default function LoginPage() {
         <h1 className="text-3xl font-bold text-center mb-8">LexLiber</h1>
         
         <button
-          onClick={handleAzureSignIn}
+          onClick={handleSignIn}
           disabled={loading}
           className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#0078d4] hover:bg-[#006abc] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0078d4] disabled:opacity-50"
         >
