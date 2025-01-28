@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { Search, Bell, BookOpen } from 'lucide-react';
 
 export function TopNav() {
@@ -32,11 +33,15 @@ export function TopNav() {
             </button>
             
             <div className="ml-4">
-              <img
-                className="w-8 h-8 rounded-full"
-                src="/api/placeholder/32/32"
-                alt="User"
-              />
+              <div className="relative w-8 h-8">
+                <Image
+                  src="/api/placeholder/32/32"
+                  alt="User"
+                  className="rounded-full"
+                  width={32}
+                  height={32}
+                />
+              </div>
             </div>
           </div>
         </div>
