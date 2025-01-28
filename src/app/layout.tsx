@@ -1,24 +1,14 @@
-import { Inter } from 'next/font/google'
-import { Providers } from '@/components/ui/providers'
-import './globals.css'
+'use client';
+import React from 'react';
 
-const inter = Inter({ subsets: ['latin'] })
-
-export const metadata = {
-  title: 'LexLiber',
-  description: 'Modern Legal Library Management System',
+interface RootLayoutProps {
+  children: React.ReactNode;
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <Providers>{children}</Providers>
-      </body>
+    <html lang="en">
+      <body>{children}</body>
     </html>
-  )
+  );
 }
