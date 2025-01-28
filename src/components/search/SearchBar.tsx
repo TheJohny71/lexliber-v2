@@ -6,13 +6,17 @@ interface SearchBarProps {
 }
 
 export function SearchBar({ onSearch }: SearchBarProps) {
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onSearch?.(e.target.value);
+  };
+
   return (
     <div className="relative">
       <input
         type="text"
         className="w-full rounded-lg border p-2"
         placeholder="Search books..."
-        onChange={(e) => onSearch?.(e.target.value)}
+        onChange={handleSearch}
       />
     </div>
   );
