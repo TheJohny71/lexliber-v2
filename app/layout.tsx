@@ -1,31 +1,15 @@
-import { Inter } from "next/font/google"
-import "./globals.css"
-import { ThemeProvider } from "@/components/layout/theme-provider"
+import { ReactNode } from 'react'
 
-const inter = Inter({ subsets: ["latin"] })
-
-export const metadata = {
-  title: "LexLiber",
-  description: "Modern Legal Library Management",
+interface DashboardLayoutProps {
+  children: ReactNode
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
-      </body>
-    </html>
+    <div className="min-h-screen bg-background">
+      <main className="flex min-h-screen flex-col">
+        {children}
+      </main>
+    </div>
   )
 }
