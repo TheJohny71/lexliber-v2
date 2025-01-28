@@ -1,14 +1,19 @@
 'use client';
+
 import React from 'react';
+import { Providers } from '@/components/ui/providers';
+import './globals.css';
 
-interface RootLayoutProps {
+export default function RootLayout({
+  children,
+}: {
   children: React.ReactNode;
-}
-
-export default function RootLayout({ children }: RootLayoutProps) {
+}) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
