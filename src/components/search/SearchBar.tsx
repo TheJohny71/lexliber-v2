@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, X, Book, BookOpen } from 'lucide-react';
+import { Search, X, Book } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SearchBarProps {
