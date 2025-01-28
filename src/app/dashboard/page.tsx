@@ -1,23 +1,16 @@
 'use client';
 
 import React from 'react';
-import { TopNav } from '../../components/ui/TopNav';
-import { Sidebar } from '../../components/ui/Sidebar';
 
-interface DashboardLayoutProps {
-  children: React.ReactNode;
-}
-
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default function Page() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <TopNav />
-      <Sidebar />
-      <main className="pl-64 pt-16">
-        <div className="p-8">
-          {children}
-        </div>
-      </main>
+    <div className="p-4 bg-white rounded-lg shadow">
+      <h1 className="text-2xl font-semibold text-gray-900">
+        Welcome to LexLiber
+      </h1>
+      <p className="mt-2 text-gray-600">
+        Your centralized law library catalog system
+      </p>
     </div>
   );
 }
