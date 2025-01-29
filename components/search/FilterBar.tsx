@@ -16,37 +16,47 @@ interface FilterBarProps {
 }
 
 export function FilterBar({ filters, onChange }: FilterBarProps) {
+  const locations = ["Fiction Section", "Non-Fiction Section", "Reference"]
+  const statuses = ["Available", "Checked Out", "On Hold"]
+  const categories = ["Fiction", "Non-Fiction", "Reference"]
+
   return (
     <div className="flex flex-wrap gap-4">
-      <Select
-        value={filters.location}
-        onValueChange={(value) => onChange({ ...filters, location: value })}
-      >
-        <option value="">All Locations</option>
-        <option value="Fiction Section">Fiction Section</option>
-        <option value="Non-Fiction Section">Non-Fiction Section</option>
-        <option value="Reference">Reference</option>
-      </Select>
+      <div className="w-full sm:w-auto">
+        <Select
+          value={filters.location}
+          onValueChange={(value: string) => onChange({ ...filters, location: value })}
+        >
+          <option value="">All Locations</option>
+          {locations.map((loc) => (
+            <option key={loc} value={loc}>{loc}</option>
+          ))}
+        </Select>
+      </div>
 
-      <Select
-        value={filters.status}
-        onValueChange={(value) => onChange({ ...filters, status: value })}
-      >
-        <option value="">All Statuses</option>
-        <option value="Available">Available</option>
-        <option value="Checked Out">Checked Out</option>
-        <option value="On Hold">On Hold</option>
-      </Select>
+      <div className="w-full sm:w-auto">
+        <Select
+          value={filters.status}
+          onValueChange={(value: string) => onChange({ ...filters, status: value })}
+        >
+          <option value="">All Statuses</option>
+          {statuses.map((status) => (
+            <option key={status} value={status}>{status}</option>
+          ))}
+        </Select>
+      </div>
 
-      <Select
-        value={filters.category}
-        onValueChange={(value) => onChange({ ...filters, category: value })}
-      >
-        <option value="">All Categories</option>
-        <option value="Fiction">Fiction</option>
-        <option value="Non-Fiction">Non-Fiction</option>
-        <option value="Reference">Reference</option>
-      </Select>
+      <div className="w-full sm:w-auto">
+        <Select
+          value={filters.category}
+          onValueChange={(value: string) => onChange({ ...filters, category: value })}
+        >
+          <option value="">All Categories</option>
+          {categories.map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </Select>
+      </div>
     </div>
   )
 }
