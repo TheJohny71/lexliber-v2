@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -18,10 +18,7 @@ export default function DashboardPage() {
             <CardTitle className="text-sm font-medium">Total Books</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">
-              in your library
-            </p>
+            <div className="text-2xl font-bold">2,350</div>
           </CardContent>
         </Card>
       </div>

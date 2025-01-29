@@ -5,7 +5,7 @@ const ThemeContext = createContext({ themeStyle: "system", setThemeStyle: (theme
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [themeStyle, setThemeStyle] = useState("system")
-  const { theme, setTheme } = useTheme()
+  const { setTheme } = useTheme()  // Remove unused 'theme' variable
 
   useEffect(() => {
     setTheme(themeStyle)
