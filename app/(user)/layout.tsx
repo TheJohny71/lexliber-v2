@@ -1,3 +1,5 @@
+"use client"
+
 import { ReactNode } from "react"
 import Link from "next/link"
 import { Search, BookOpen, User, Menu } from "lucide-react"
@@ -21,7 +23,7 @@ interface UserLayoutProps {
 
 const navigation = [
   { name: 'Search', href: '/search', icon: Search },
-  { name: 'My Books', href: '/my-books', icon: BookOpen },
+  { name: 'Catalog', href: '/catalog', icon: BookOpen },  // Updated from 'My Books' to 'Catalog'
   { name: 'Profile', href: '/profile', icon: User },
 ]
 
@@ -41,7 +43,10 @@ export default function UserLayout({ children }: UserLayoutProps) {
                   <NavigationMenuItem key={item.name}>
                     <Link href={item.href} legacyBehavior passHref>
                       <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                        {item.name}
+                        <span className="flex items-center gap-2">
+                          <item.icon className="h-4 w-4" />
+                          {item.name}
+                        </span>
                       </NavigationMenuLink>
                     </Link>
                   </NavigationMenuItem>
@@ -50,9 +55,11 @@ export default function UserLayout({ children }: UserLayoutProps) {
             </NavigationMenu>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon">
-              <User className="h-5 w-5" />
-              <span className="sr-only">User menu</span>
+            <Button variant="outline" size="sm">
+              Sign In
+            </Button>
+            <Button size="sm">
+              Sign Up
             </Button>
           </div>
         </div>
@@ -87,6 +94,16 @@ export default function UserLayout({ children }: UserLayoutProps) {
                   )
                 })}
               </nav>
+              <div className="border-t p-4">
+                <div className="flex flex-col gap-2">
+                  <Button variant="outline" className="w-full">
+                    Sign In
+                  </Button>
+                  <Button className="w-full">
+                    Sign Up
+                  </Button>
+                </div>
+              </div>
             </div>
           </SheetContent>
         </Sheet>
