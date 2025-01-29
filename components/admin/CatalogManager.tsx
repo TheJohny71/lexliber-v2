@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { BookForm } from "@/components/admin/BookForm";
+import { BookForm } from "@/components/admin/BookForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/shared/DataTable";
@@ -38,6 +40,9 @@ interface Book {
   publisher: string;
   publishYear: number;
   copies: number;
+  description?: string;
+  coverImage?: string;
+  categories?: string[];
 }
 
 const CatalogManager = () => {
@@ -46,6 +51,10 @@ const CatalogManager = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedBooks, setSelectedBooks] = useState<string[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
 
@@ -157,8 +166,8 @@ const CatalogManager = () => {
   };
 
   const handleEdit = (book: Book) => {
-    // TODO: Implement edit functionality
-    console.log('Edit book:', book);
+    setSelectedBook(book);
+    setIsEditDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -218,7 +227,52 @@ const CatalogManager = () => {
                   Add a new book to the library catalog.
                 </DialogDescription>
               </DialogHeader>
-              {/* TODO: Add book form component */}
+              <BookForm 
+                onSubmit={async (data) => {
+                  try {
+                    // TODO: Replace with actual API call
+                    await fetch('/api/books', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(data)
+                    });
+                    setIsAddDialogOpen(false);
+                    fetchBooks();
+                  } catch (err) {
+                    setError('Failed to add book. Please try again later.');
+                  }
+                }}
+                onCancel={() => setIsAddDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit Book</DialogTitle>
+                <DialogDescription>
+                  Modify book details in the library catalog.
+                </DialogDescription>
+              </DialogHeader>
+              {selectedBook && (
+                <BookForm 
+                  book={selectedBook}
+                  onSubmit={async (data) => {
+                    try {
+                      await fetch(`/api/books/${selectedBook.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                      });
+                      setIsEditDialogOpen(false);
+                      fetchBooks();
+                    } catch (err) {
+                      setError('Failed to update book. Please try again later.');
+                    }
+                  }}
+                  onCancel={() => setIsEditDialogOpen(false)}
+                />
+              )}
             </DialogContent>
           </Dialog>
         </div>
