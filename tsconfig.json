@@ -28,6 +28,7 @@
         "name": "next"
       }
     ],
+    "types": ["node", "react", "react-dom"],
     "forceConsistentCasingInFileNames": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
