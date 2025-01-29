@@ -1,29 +1,13 @@
-import { createContext, useContext, useEffect, useState } from "react"
-import { useTheme } from "next-themes"
+"use client"
 
-type ThemeContextType = {
-  themeStyle: string;
-  setThemeStyle: (theme: string) => void;
-}
+import * as React from "react"
+import { ThemeProvider as NextThemesProvider } from "next-themes"
+import { type ThemeProviderProps } from "next-themes/dist/types"
 
-const ThemeContext = createContext<ThemeContextType>({ 
-  themeStyle: "system", 
-  setThemeStyle: () => {} 
-})
-
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [themeStyle, setThemeStyle] = useState("system")
-  const { setTheme } = useTheme()
-
-  useEffect(() => {
-    setTheme(themeStyle)
-  }, [themeStyle, setTheme])
-
+export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return (
-    <ThemeContext.Provider value={{ themeStyle, setThemeStyle }}>
+    <NextThemesProvider {...props}>
       {children}
-    </ThemeContext.Provider>
+    </NextThemesProvider>
   )
 }
-
-export const useThemeContext = () => useContext(ThemeContext)

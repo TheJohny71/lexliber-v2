@@ -1,15 +1,27 @@
-import { ReactNode } from 'react'
+import type { Metadata } from "next"
+import { Inter } from "next/font/google"
+import "./globals.css"
+import { ThemeProvider } from "@/components/layout/theme-provider"
 
-interface DashboardLayoutProps {
-  children: ReactNode
+const inter = Inter({ subsets: ["latin"] })
+
+export const metadata: Metadata = {
+  title: "LexLiber",
+  description: "Library Management System",
 }
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <div className="min-h-screen bg-background">
-      <main className="flex min-h-screen flex-col">
-        {children}
-      </main>
-    </div>
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          {children}
+        </ThemeProvider>
+      </body>
+    </html>
   )
 }
