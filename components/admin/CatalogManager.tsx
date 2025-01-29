@@ -1,173 +1,263 @@
-"use client"
-
-import { useState } from 'react'
-import { 
-  Upload, 
-  Download, 
-  PlusCircle,
-  RefreshCw,
-  Filter,
-  Search,
-  MoreVertical,
-  Edit,
-  Trash2
-} from 'lucide-react'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import React, { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { DataTable } from "@/components/shared/DataTable";
+import { SearchBar } from "@/components/search/SearchBar";
+import { FilterBar } from "@/components/filters/FilterBar";
+import { PlusCircle, Download, Trash, Edit } from "lucide-react";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
+} from "@/components/ui/dropdown-menu";
+import { 
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Book {
-  id: string
-  title: string
-  callNumber: string
-  location: string
-  status: 'Available' | 'Checked Out' | 'Processing' | 'Lost'
-  lastUpdated: string
+  id: string;
+  title: string;
+  author: string;
+  isbn: string;
+  status: 'available' | 'borrowed' | 'processing';
+  publisher: string;
+  publishYear: number;
+  copies: number;
 }
 
-export function CatalogManager() {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+const CatalogManager = () => {
+  const [books, setBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedBooks, setSelectedBooks] = useState<string[]>([]);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
 
-  // Dummy data - will be replaced with actual API calls
-  const books: Book[] = [
+  // Columns definition for DataTable
+  const columns = [
     {
-      id: '1',
-      title: 'Constitutional Law',
-      callNumber: 'KF4550 .G56 2023',
-      location: 'Main Library',
-      status: 'Available',
-      lastUpdated: '2024-01-29T10:00:00'
+      id: 'select',
+      header: ({ table }) => (
+        <input
+          type="checkbox"
+          checked={table.getIsAllRowsSelected()}
+          onChange={table.getToggleAllRowsSelectedHandler()}
+          className="h-4 w-4 rounded border-gray-300"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          checked={row.getIsSelected()}
+          onChange={row.getToggleSelectedHandler()}
+          className="h-4 w-4 rounded border-gray-300"
+        />
+      ),
     },
     {
-      id: '2',
-      title: 'Contract Law Principles',
-      callNumber: 'KF801 .F47 2023',
-      location: 'Reference',
-      status: 'Checked Out',
-      lastUpdated: '2024-01-28T15:30:00'
+      accessorKey: 'title',
+      header: 'Title',
     },
-    // Add more dummy data as needed
-  ]
+    {
+      accessorKey: 'author',
+      header: 'Author',
+    },
+    {
+      accessorKey: 'isbn',
+      header: 'ISBN',
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ row }) => (
+        <span className={`px-2 py-1 rounded-full text-sm ${
+          row.original.status === 'available' ? 'bg-green-100 text-green-800' :
+          row.original.status === 'borrowed' ? 'bg-yellow-100 text-yellow-800' :
+          'bg-gray-100 text-gray-800'
+        }`}>
+          {row.original.status}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'copies',
+      header: 'Copies',
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <Edit className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => handleEdit(row.original)}>
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              className="text-red-600"
+              onClick={() => handleDelete(row.original.id)}
+            >
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
 
-  const getStatusColor = (status: Book['status']) => {
-    switch (status) {
-      case 'Available':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
-      case 'Checked Out':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
-      case 'Processing':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
-      case 'Lost':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100'
+  useEffect(() => {
+    fetchBooks();
+  }, [searchQuery, activeFilters]);
+
+  const fetchBooks = async () => {
+    try {
+      setLoading(true);
+      // TODO: Replace with actual API call
+      const response = await fetch('/api/books?' + new URLSearchParams({
+        search: searchQuery,
+        ...activeFilters
+      }));
+      const data = await response.json();
+      setBooks(data);
+      setError(null);
+    } catch (err) {
+      setError('Failed to fetch books. Please try again later.');
+    } finally {
+      setLoading(false);
     }
-  }
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  const handleFilterChange = (filters: Record<string, any>) => {
+    setActiveFilters(filters);
+  };
+
+  const handleEdit = (book: Book) => {
+    // TODO: Implement edit functionality
+    console.log('Edit book:', book);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      // TODO: Replace with actual API call
+      await fetch(`/api/books/${id}`, { method: 'DELETE' });
+      setBooks(books.filter(book => book.id !== id));
+    } catch (err) {
+      setError('Failed to delete book. Please try again later.');
+    }
+  };
+
+  const handleExport = () => {
+    // TODO: Implement export functionality
+    console.log('Export books:', selectedBooks);
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      // TODO: Replace with actual API call
+      await Promise.all(
+        selectedBooks.map(id => 
+          fetch(`/api/books/${id}`, { method: 'DELETE' })
+        )
+      );
+      setBooks(books.filter(book => !selectedBooks.includes(book.id)));
+      setSelectedBooks([]);
+    } catch (err) {
+      setError('Failed to delete selected books. Please try again later.');
+    }
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 flex-1">
-          <div className="relative w-96">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search by title or call number..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <Button variant="outline" size="icon">
-            <Filter className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button variant="outline">
-            <Upload className="h-4 w-4 mr-2" />
-            Import
-          </Button>
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold tracking-tight">Catalog Management</h2>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={handleExport} disabled={!selectedBooks.length}>
+            <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
-          <Button>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Add Book
+          <Button variant="outline" onClick={handleBulkDelete} disabled={!selectedBooks.length}>
+            <Trash className="mr-2 h-4 w-4" />
+            Delete Selected
           </Button>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Book
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Book</DialogTitle>
+                <DialogDescription>
+                  Add a new book to the library catalog.
+                </DialogDescription>
+              </DialogHeader>
+              {/* TODO: Add book form component */}
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Call Number</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Last Updated</TableHead>
-              <TableHead className="w-[70px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {books.map((book) => (
-              <TableRow key={book.id}>
-                <TableCell className="font-medium">{book.title}</TableCell>
-                <TableCell>{book.callNumber}</TableCell>
-                <TableCell>{book.location}</TableCell>
-                <TableCell>
-                  <Badge 
-                    variant="secondary"
-                    className={getStatusColor(book.status)}
-                  >
-                    {book.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {new Date(book.lastUpdated).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Search and Filter</CardTitle>
+          <CardDescription>
+            Find and filter books in the catalog
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <SearchBar onSearch={handleSearch} />
+          <FilterBar 
+            filters={[
+              { key: 'status', label: 'Status', options: ['available', 'borrowed', 'processing'] },
+              { key: 'publishYear', label: 'Publish Year', type: 'range' },
+            ]} 
+            onChange={handleFilterChange}
+          />
+        </CardContent>
+      </Card>
+
+      <DataTable
+        columns={columns}
+        data={books}
+        loading={loading}
+        onRowSelectionChange={setSelectedBooks}
+        selectedRows={selectedBooks}
+      />
     </div>
-  )
-}
+  );
+};
+
+export default CatalogManager;
