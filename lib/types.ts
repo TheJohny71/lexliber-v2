@@ -1,26 +1,49 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+// Book related types
+export interface Book {
+  id: string;
+  title: string;
+  author: string;
+  isbn: string;
+  status: 'available' | 'borrowed' | 'processing';
+  publisher: string;
+  publishYear: number;
+  copies: number;
+  description?: string;
+  coverImage?: string;
+  categories?: string[];
+  location?: string;
+  callNumber?: string;
 }
 
-export function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  }).format(date)
+// Form related types
+export interface FormFieldProps {
+  error?: string;
+  [key: string]: any;
 }
 
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount)
+// Component props
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  error?: string;
 }
 
-export function truncate(str: string, length: number): string {
-  if (str.length <= length) return str
-  return str.slice(0, length) + "..."
+export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  error?: string;
 }
+
+// Table related types
+export interface TableColumn<T> {
+  key: keyof T;
+  header: string;
+  cell?: (item: T) => React.ReactNode;
+}
+
+export interface TableProps<T> {
+  data: T[];
+  columns: TableColumn<T>[];
+  loading?: boolean;
+  onRowClick?: (item: T) => void;
+}
+
+// Status types
+export type BookStatus = 'available' | 'borrowed' | 'processing';
+export type UserStatus = 'active' | 'inactive' | 'suspended';

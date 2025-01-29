@@ -45,7 +45,7 @@ interface Book {
   categories?: string[];
 }
 
-const CatalogManager = () => {
+  export const CatalogManager = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

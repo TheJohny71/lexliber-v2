@@ -7,34 +7,44 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useTheme } from "next-themes"
 import { AlertCircle, CheckCircle2, Save } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
+type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
+type ThemeType = 'light' | 'dark' | 'system';
+
+interface GeneralSettings {
+  libraryName: string;
+  contactEmail: string;
+  maxBorrowDays: number;
+  enableNotifications: boolean;
+  enableAutoRenew: boolean;
+}
+
+interface AwsSettings {
+  bucketName: string;
+  region: string;
+  accessKey: string;
+  secretKey: string;
+}
+
+interface AppearanceSettings {
+  customAccentColor: string;
+  enableAnimations: boolean;
+  compactMode: boolean;
+}
+
 interface SettingsState {
-  general: {
-    libraryName: string
-    contactEmail: string
-    maxBorrowDays: number
-    enableNotifications: boolean
-    enableAutoRenew: boolean
-  }
-  aws: {
-    bucketName: string
-    region: string
-    accessKey: string
-    secretKey: string
-  }
-  appearance: {
-    customAccentColor: string
-    enableAnimations: boolean 
-    compactMode: boolean
-  }
+  general: GeneralSettings;
+  aws: AwsSettings;
+  appearance: AppearanceSettings;
 }
 
 export default function SettingsPanel() {
   const { theme, setTheme } = useTheme()
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle')
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [settings, setSettings] = useState<SettingsState>({
     general: {
       libraryName: 'LexLiber Library',
@@ -59,17 +69,26 @@ export default function SettingsPanel() {
   const handleSave = async () => {
     setSaveStatus('saving')
     try {
-      // Simulated API call - replace with actual save logic
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // TODO: Replace with actual API call
+      await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      });
       setSaveStatus('success')
-      setTimeout(() => setSaveStatus('idle'), 3000)
     } catch (error) {
       setSaveStatus('error')
+      console.error('Failed to save settings:', error)
+    } finally {
       setTimeout(() => setSaveStatus('idle'), 3000)
     }
   }
 
-  const updateSettings = (category: keyof SettingsState, field: string, value: any) => {
+  const updateSettings = <T extends keyof SettingsState>(
+    category: T,
+    field: keyof SettingsState[T],
+    value: SettingsState[T][keyof SettingsState[T]]
+  ) => {
     setSettings(prev => ({
       ...prev,
       [category]: {
@@ -78,6 +97,29 @@ export default function SettingsPanel() {
       }
     }))
   }
+
+  // Status alert component
+  const StatusAlert = () => {
+    if (saveStatus === 'success') {
+      return (
+        <Alert className="bg-green-500/15 text-green-500 border-green-500/50">
+          <CheckCircle2 className="h-4 w-4" />
+          <AlertTitle>Success</AlertTitle>
+          <AlertDescription>Your settings have been saved successfully.</AlertDescription>
+        </Alert>
+      );
+    }
+    if (saveStatus === 'error') {
+      return (
+        <Alert className="bg-red-500/15 text-red-500 border-red-500/50">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>Failed to save settings. Please try again.</AlertDescription>
+        </Alert>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -102,21 +144,7 @@ export default function SettingsPanel() {
         </Button>
       </div>
 
-      {saveStatus === 'success' && (
-        <Alert className="bg-green-500/15 text-green-500 border-green-500/50">
-          <CheckCircle2 className="h-4 w-4" />
-          <AlertTitle>Success</AlertTitle>
-          <AlertDescription>Your settings have been saved successfully.</AlertDescription>
-        </Alert>
-      )}
-
-      {saveStatus === 'error' && (
-        <Alert className="bg-red-500/15 text-red-500 border-red-500/50">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>Failed to save settings. Please try again.</AlertDescription>
-        </Alert>
-      )}
+      <StatusAlert />
 
       <Tabs defaultValue="general" className="space-y-4">
         <TabsList>
@@ -159,6 +187,8 @@ export default function SettingsPanel() {
                   <Input 
                     id="maxBorrowDays"
                     type="number"
+                    min="1"
+                    max="365"
                     value={settings.general.maxBorrowDays}
                     onChange={(e) => updateSettings('general', 'maxBorrowDays', parseInt(e.target.value))}
                   />
@@ -166,12 +196,13 @@ export default function SettingsPanel() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Enable Notifications</Label>
+                    <Label htmlFor="enableNotifications">Enable Notifications</Label>
                     <p className="text-sm text-muted-foreground">
                       Send email notifications for due dates and holds
                     </p>
                   </div>
                   <Switch
+                    id="enableNotifications"
                     checked={settings.general.enableNotifications}
                     onCheckedChange={(checked) => updateSettings('general', 'enableNotifications', checked)}
                   />
@@ -179,12 +210,13 @@ export default function SettingsPanel() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Enable Auto-Renew</Label>
+                    <Label htmlFor="enableAutoRenew">Enable Auto-Renew</Label>
                     <p className="text-sm text-muted-foreground">
                       Automatically renew items if no holds exist
                     </p>
                   </div>
                   <Switch
+                    id="enableAutoRenew"
                     checked={settings.general.enableAutoRenew}
                     onCheckedChange={(checked) => updateSettings('general', 'enableAutoRenew', checked)}
                   />
@@ -258,16 +290,16 @@ export default function SettingsPanel() {
               <div className="space-y-4">
                 <div className="grid gap-2">
                   <Label htmlFor="theme">Theme</Label>
-                  <select
-                    id="theme"
-                    value={theme}
-                    onChange={(e) => setTheme(e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                    <option value="system">System</option>
-                  </select>
+                  <Select value={theme} onValueChange={(value: ThemeType) => setTheme(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select theme" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="light">Light</SelectItem>
+                      <SelectItem value="dark">Dark</SelectItem>
+                      <SelectItem value="system">System</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="grid gap-2">
@@ -291,12 +323,13 @@ export default function SettingsPanel() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Enable Animations</Label>
+                    <Label htmlFor="enableAnimations">Enable Animations</Label>
                     <p className="text-sm text-muted-foreground">
                       Show transitions and animations throughout the interface
                     </p>
                   </div>
                   <Switch
+                    id="enableAnimations"
                     checked={settings.appearance.enableAnimations}
                     onCheckedChange={(checked) => updateSettings('appearance', 'enableAnimations', checked)}
                   />
@@ -304,12 +337,13 @@ export default function SettingsPanel() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Compact Mode</Label>
+                    <Label htmlFor="compactMode">Compact Mode</Label>
                     <p className="text-sm text-muted-foreground">
                       Reduce spacing and padding in the interface
                     </p>
                   </div>
                   <Switch
+                    id="compactMode"
                     checked={settings.appearance.compactMode}
                     onCheckedChange={(checked) => updateSettings('appearance', 'compactMode', checked)}
                   />
