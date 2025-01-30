@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect } from 'react'
-import { Search, Filter, X, Plus, ChevronDown } from 'lucide-react'
+import { Search, Filter, X, Plus } from 'lucide-react'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -19,14 +19,13 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
 
 interface SearchBarProps {
   value: string
   onChange: (value: string) => void
   onAdvancedSearch?: (params: AdvancedSearchParams[]) => void
+  onSearch?: (term: string) => void
   className?: string
 }
 
@@ -36,7 +35,34 @@ interface AdvancedSearchParams {
   value: string
 }
 
-export function SearchBar({ value, onChange, onAdvancedSearch, className = '' }: SearchBarProps) {
+const searchFields = [
+  { label: 'Title', value: 'title' },
+  { label: 'Author', value: 'author' },
+  { label: 'ISBN', value: 'isbn' },
+  { label: 'Call Number', value: 'callNumber' },
+  { label: 'Publisher', value: 'publisher' },
+  { label: 'Subject', value: 'subject' },
+  { label: 'Language', value: 'language' },
+  { label: 'Location', value: 'location' }
+] as const
+
+const searchOperators = [
+  { label: 'Contains', value: 'contains' },
+  { label: 'Starts with', value: 'startsWith' },
+  { label: 'Ends with', value: 'endsWith' },
+  { label: 'Equals', value: 'equals' },
+  { label: 'Not equals', value: 'notEquals' },
+  { label: 'Greater than', value: 'greaterThan' },
+  { label: 'Less than', value: 'lessThan' }
+] as const
+
+export function SearchBar({ 
+  value, 
+  onChange, 
+  onAdvancedSearch, 
+  onSearch,
+  className = '' 
+}: SearchBarProps) {
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
   const [advancedParams, setAdvancedParams] = useState<AdvancedSearchParams[]>([])
@@ -44,32 +70,16 @@ export function SearchBar({ value, onChange, onAdvancedSearch, className = '' }:
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
 
-  const searchFields = [
-    { label: 'Title', value: 'title' },
-    { label: 'Author', value: 'author' },
-    { label: 'ISBN', value: 'isbn' },
-    { label: 'Call Number', value: 'callNumber' },
-    { label: 'Publisher', value: 'publisher' },
-    { label: 'Subject', value: 'subject' },
-    { label: 'Language', value: 'language' },
-    { label: 'Location', value: 'location' }
-  ]
-
-  const searchOperators = [
-    { label: 'Contains', value: 'contains' },
-    { label: 'Starts with', value: 'startsWith' },
-    { label: 'Ends with', value: 'endsWith' },
-    { label: 'Equals', value: 'equals' },
-    { label: 'Not equals', value: 'notEquals' },
-    { label: 'Greater than', value: 'greaterThan' },
-    { label: 'Less than', value: 'lessThan' }
-  ]
-
-  // Load search history from localStorage
+  // Load search history from localStorage on mount
   useEffect(() => {
     const savedHistory = localStorage.getItem('searchHistory')
     if (savedHistory) {
-      setSearchHistory(JSON.parse(savedHistory))
+      try {
+        setSearchHistory(JSON.parse(savedHistory))
+      } catch (error) {
+        console.error('Failed to parse search history:', error)
+        setSearchHistory([])
+      }
     }
   }, [])
 
@@ -85,28 +95,38 @@ export function SearchBar({ value, onChange, onAdvancedSearch, className = '' }:
   }, [])
 
   const addSearchParam = () => {
-    setAdvancedParams([
-      ...advancedParams,
+    setAdvancedParams(prev => [
+      ...prev,
       { field: searchFields[0].value, operator: searchOperators[0].value, value: '' }
     ])
   }
 
   const removeSearchParam = (index: number) => {
-    setAdvancedParams(advancedParams.filter((_, i) => i !== index))
+    setAdvancedParams(prev => {
+      const newParams = prev.filter((_, i) => i !== index)
+      if (onAdvancedSearch) {
+        onAdvancedSearch(newParams)
+      }
+      return newParams
+    })
   }
 
   const updateSearchParam = (index: number, field: keyof AdvancedSearchParams, value: string) => {
-    const newParams = [...advancedParams]
-    newParams[index] = { ...newParams[index], [field]: value }
-    setAdvancedParams(newParams)
-    
-    if (onAdvancedSearch) {
-      onAdvancedSearch(newParams)
-    }
+    setAdvancedParams(prev => {
+      const newParams = [...prev]
+      newParams[index] = { ...newParams[index], [field]: value }
+      if (onAdvancedSearch) {
+        onAdvancedSearch(newParams)
+      }
+      return newParams
+    })
   }
 
   const handleSearch = () => {
-    saveToHistory(value)
+    if (value.trim()) {
+      saveToHistory(value)
+      onSearch?.(value)
+    }
     setShowSuggestions(false)
   }
 
@@ -120,6 +140,7 @@ export function SearchBar({ value, onChange, onAdvancedSearch, className = '' }:
     onChange('')
     setAdvancedParams([])
     setShowAdvanced(false)
+    onAdvancedSearch?.([])
   }
 
   const getSuggestions = (query: string) => {
@@ -129,11 +150,14 @@ export function SearchBar({ value, onChange, onAdvancedSearch, className = '' }:
       'biography', 'romance', 'technology', 'art', 'music'
     ]
     
-    return commonTerms
-      .filter(term => term.toLowerCase().includes(query.toLowerCase()))
-      .slice(0, 5)
+    return query.trim() 
+      ? commonTerms
+          .filter(term => term.toLowerCase().includes(query.toLowerCase()))
+          .slice(0, 5)
+      : []
   }
 
+  // Update suggestions when value changes
   useEffect(() => {
     if (value.trim()) {
       setSuggestions(getSuggestions(value))
@@ -148,6 +172,7 @@ export function SearchBar({ value, onChange, onAdvancedSearch, className = '' }:
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
+          type="search"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyPress={handleKeyPress}
@@ -164,6 +189,7 @@ export function SearchBar({ value, onChange, onAdvancedSearch, className = '' }:
               size="sm"
               onClick={clearSearch}
               className="h-7 w-7 p-0"
+              title="Clear search"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -174,6 +200,7 @@ export function SearchBar({ value, onChange, onAdvancedSearch, className = '' }:
                 variant="ghost" 
                 size="sm"
                 className="h-7 w-7 p-0"
+                title="Search options"
               >
                 <Filter className="h-4 w-4" />
               </Button>
@@ -203,7 +230,7 @@ export function SearchBar({ value, onChange, onAdvancedSearch, className = '' }:
           </Button>
         </div>
 
-        {/* Search Suggestions Dropdown */}
+        {/* Search Suggestions */}
         {showSuggestions && suggestions.length > 0 && (
           <div className="absolute left-0 right-0 top-full mt-1 rounded-md border bg-background shadow-md z-10">
             {suggestions.map((suggestion, index) => (
@@ -278,6 +305,7 @@ export function SearchBar({ value, onChange, onAdvancedSearch, className = '' }:
                   size="sm"
                   onClick={() => removeSearchParam(index)}
                   className="h-9 w-9 p-0"
+                  title="Remove condition"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -321,8 +349,11 @@ export function SearchBar({ value, onChange, onAdvancedSearch, className = '' }:
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        setSearchHistory(prev => prev.filter((_, i) => i !== index))
+                        const newHistory = searchHistory.filter((_, i) => i !== index)
+                        setSearchHistory(newHistory)
+                        localStorage.setItem('searchHistory', JSON.stringify(newHistory))
                       }}
+                      title="Remove from history"
                     >
                       <X className="h-4 w-4" />
                     </Button>

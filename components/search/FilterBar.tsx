@@ -1,6 +1,11 @@
-"use client"
-
-import { Select } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface FilterBarProps {
   filters: {
@@ -8,53 +13,67 @@ interface FilterBarProps {
     status: string
     category: string
   }
-  onChange: (filters: {
-    location: string
-    status: string
-    category: string
-  }) => void
+  onChange: (filters: { location: string; status: string; category: string }) => void
 }
 
 export function FilterBar({ filters, onChange }: FilterBarProps) {
-  const locations = ["Fiction Section", "Non-Fiction Section", "Reference"]
-  const statuses = ["Available", "Checked Out", "On Hold"]
-  const categories = ["Fiction", "Non-Fiction", "Reference"]
-
   return (
-    <div className="flex flex-wrap gap-4">
-      <div className="w-full sm:w-auto">
+    <div className="flex flex-col gap-4 md:flex-row md:items-end">
+      <div className="grid gap-2">
+        <Label htmlFor="location">Location</Label>
         <Select
           value={filters.location}
-          onValueChange={(value: string) => onChange({ ...filters, location: value })}
+          onValueChange={(value) =>
+            onChange({ ...filters, location: value })
+          }
         >
-          <option value="">All Locations</option>
-          {locations.map((loc) => (
-            <option key={loc} value={loc}>{loc}</option>
-          ))}
+          <SelectTrigger id="location" className="w-[180px]">
+            <SelectValue placeholder="Select location" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="fiction">Fiction Section</SelectItem>
+            <SelectItem value="non-fiction">Non-Fiction Section</SelectItem>
+            <SelectItem value="reference">Reference Section</SelectItem>
+          </SelectContent>
         </Select>
       </div>
 
-      <div className="w-full sm:w-auto">
+      <div className="grid gap-2">
+        <Label htmlFor="status">Status</Label>
         <Select
           value={filters.status}
-          onValueChange={(value: string) => onChange({ ...filters, status: value })}
+          onValueChange={(value) =>
+            onChange({ ...filters, status: value })
+          }
         >
-          <option value="">All Statuses</option>
-          {statuses.map((status) => (
-            <option key={status} value={status}>{status}</option>
-          ))}
+          <SelectTrigger id="status" className="w-[180px]">
+            <SelectValue placeholder="Select status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="available">Available</SelectItem>
+            <SelectItem value="checked-out">Checked Out</SelectItem>
+            <SelectItem value="on-hold">On Hold</SelectItem>
+          </SelectContent>
         </Select>
       </div>
 
-      <div className="w-full sm:w-auto">
+      <div className="grid gap-2">
+        <Label htmlFor="category">Category</Label>
         <Select
           value={filters.category}
-          onValueChange={(value: string) => onChange({ ...filters, category: value })}
+          onValueChange={(value) =>
+            onChange({ ...filters, category: value })
+          }
         >
-          <option value="">All Categories</option>
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
+          <SelectTrigger id="category" className="w-[180px]">
+            <SelectValue placeholder="Select category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="science">Science</SelectItem>
+            <SelectItem value="history">History</SelectItem>
+            <SelectItem value="literature">Literature</SelectItem>
+            <SelectItem value="technology">Technology</SelectItem>
+          </SelectContent>
         </Select>
       </div>
     </div>
